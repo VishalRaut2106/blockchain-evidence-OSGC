@@ -42,6 +42,11 @@ async function connectWallet() {
     try {
         showLoading(true);
         
+        // Track wallet connection attempt
+        if (typeof trackUserAction === 'function') {
+            trackUserAction('wallet_connect_attempt', 'authentication');
+        }
+        
         // Demo mode for testing without MetaMask
         if (!window.ethereum) {
             userAccount = '0x1234567890123456789012345678901234567890';
@@ -61,11 +66,22 @@ async function connectWallet() {
         userAccount = accounts[0];
         updateWalletUI();
         await checkRegistrationStatus();
+        
+        // Track successful wallet connection
+        if (typeof trackUserAction === 'function') {
+            trackUserAction('wallet_connected', 'authentication');
+        }
+        
         showLoading(false);
     } catch (error) {
         showLoading(false);
         console.error('Wallet connection error:', error);
         showAlert('Failed to connect wallet: ' + error.message, 'error');
+        
+        // Track wallet connection failure
+        if (typeof trackUserAction === 'function') {
+            trackUserAction('wallet_connect_failed', 'authentication');
+        }
     }
 }
 
@@ -249,6 +265,16 @@ async function handleRegistration(event) {
             }
         }
         
+        // Track successful registration
+        if (typeof trackEvent === 'function') {
+            trackEvent('user_registration', {
+                event_category: 'registration',
+                role_type: dbRole,
+                user_type: 'new_user',
+                department: formData.department
+            });
+        }
+        
         showLoading(false);
         showAlert('Registration successful! Redirecting to dashboard...', 'success');
         
@@ -410,6 +436,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set the role value
             const role = this.dataset.role;
             if (userRoleInput) userRoleInput.value = role;
+            
+            // Track role selection
+            if (typeof trackUserAction === 'function') {
+                const roleName = roleNames[parseInt(role)] || 'Unknown';
+                trackUserAction('role_selected', 'registration');
+                trackEvent('role_selection', {
+                    event_category: 'registration',
+                    role_type: roleName,
+                    role_id: role
+                });
+            }
             
             // Show/hide professional fields
             if (professionalFields) {

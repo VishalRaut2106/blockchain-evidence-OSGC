@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>👑 Admin Dashboard - EVID-DGC</title>
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KEYDE0ZH4Z"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-KEYDE0ZH4Z');
+    </script>
     <style>
         .admin-section { margin: 30px 0; }
         .user-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
@@ -306,6 +315,7 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
     <script src="config.js?v=7"></script>
     <script src="storage.js?v=7"></script>
+    <script src="analytics.js"></script>
     <script>
         let currentAdmin = null;
 

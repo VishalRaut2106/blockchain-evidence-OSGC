@@ -66,6 +66,27 @@ http://localhost:8080  # Frontend only
 | 🔍 **Auditor** | System auditing | ✅ Yes |
 | 👑 **Administrator** | Full system access | ❌ Admin-only |
 
+## 📊 Analytics & Monitoring
+
+### Google Analytics Integration
+- ✅ **Page View Tracking** - Monitor user navigation patterns
+- ✅ **Custom Event Tracking** - Track user actions and system usage
+- ✅ **Role-Based Analytics** - Understand usage by user role
+- ✅ **Privacy-Compliant** - No PII or sensitive data tracked
+
+### Setup Analytics
+1. Get Google Analytics Measurement ID (G-XXXXXXXXXX)
+2. Update `public/analytics.js` with your ID
+3. Deploy and monitor usage patterns
+4. See `GOOGLE_ANALYTICS_SETUP.md` for detailed setup
+
+### Tracked Events
+- 🔐 User authentication (login/logout)
+- 👤 User registration by role
+- 📁 Dashboard navigation
+- 🔍 Feature usage patterns
+- ⚖️ Admin actions (anonymized)
+
 ## 🔧 Admin Features
 
 ### User Management
