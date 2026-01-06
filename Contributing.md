@@ -357,26 +357,33 @@ Contributors will be recognized in:
 - [ ] Changelog updated
 - [ ] Security review completed
 
-## 🤝 Contributors
-
 ## 👥 Contributors
 
-<a href="https://github.com/Gooichand/blockchain-evidence/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Gooichand/blockchain-evidence" alt="Contributors" />
-</a>
+<p align="left">
+  <a href="https://github.com/Gooichand/blockchain-evidence/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=Gooichand/blockchain-evidence" alt="Contributors" />
+  </a>
+</p>
 
+See the full list of contributors and their contributions on the [`GitHub Contributors Graph`](https://github.com/Gooichand/blockchain-evidence/graphs/contributors).
 
-Made with [contrib.rocks](https://contrib.rocks)
+<h2 align="center">
+<p style="font-family:var(--ff-philosopher);font-size:3rem;"><b> Show some <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png" alt="Red Heart" width="40" height="40" /> by starring this awesome repository!
+</p>
+</h2>
 
-
-**Live Contributors:** https://github.com/Gooichand/blockchain-evidence/graphs/contributors
+<div align="center">
+  <img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%">
+</div>
 
 ---
 
-## 🌟 Want to Contribute?
-Check our [Good First Issues](https://github.com/Gooichand/blockchain-evidence/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) or [Issues](https://github.com/Gooichand/blockchain-evidence/issues)!
+## 📊 Repository Stats
 
-[CONTRIBUTING.md](CONTRIBUTING.md) 👈
+[![GitHub stars](https://img.shields.io/github/stars/Gooichand/blockchain-evidence?style=social)](https://github.com/Gooichand/blockchain-evidence/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Gooichand/blockchain-evidence?style=social)](https://github.com/Gooichand/blockchain-evidence/network/members)
+[![GitHub contributors](https://img.shields.io/github/contributors/Gooichand/blockchain-evidence)](https://github.com/Gooichand/blockchain-evidence/graphs/contributors)
+
 
 
 ## Questions?
