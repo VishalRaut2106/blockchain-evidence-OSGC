@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Management | EVID-DGC</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="case-status-styles.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="header-nav">
+        <div class="navbar-container">
+            <div class="nav-brand">
+                <i data-lucide="shield-check" class="brand-icon"></i>
+                <span>EVID-DGC</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">
+                    <i data-lucide="home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="dashboard.html" class="nav-link">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="case-management.html" class="nav-link active">
+                    <i data-lucide="folder"></i>
+                    <span>Cases</span>
+                </a>
+                <a href="evidence.html" class="nav-link">
+                    <i data-lucide="file-text"></i>
+                    <span>Evidence</span>
+                </a>
+                <button class="nav-login-btn" onclick="logout()">
+                    <i data-lucide="log-out"></i>
+                    <span>Logout</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="case-management-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1>Case Management</h1>
+                <p>Manage cases with comprehensive status workflow and role-based permissions</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="showCreateCaseModal()">
+                    <i data-lucide="plus"></i>
+                    Create New Case
+                </button>
+                <button class="btn btn-outline" onclick="showStatisticsModal()">
+                    <i data-lucide="bar-chart-3"></i>
+                    Statistics
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="case-filters-section">
+            <h3>Filter Cases</h3>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="statusFilter">Status</label>
+                    <select id="statusFilter" class="case-filter">
+                        <!-- Options populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="priorityFilter">Priority</label>
+                    <select id="priorityFilter" class="case-filter">
+                        <!-- Options populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="assignmentFilter">Assignment</label>
+                    <select id="assignmentFilter" class="case-filter">
+                        <!-- Options populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="caseTypeFilter">Case Type</label>
+                    <select id="caseTypeFilter" class="case-filter">
+                        <option value="">All Types</option>
+                        <option value="criminal">Criminal</option>
+                        <option value="civil">Civil</option>
+                        <option value="administrative">Administrative</option>
+                        <option value="regulatory">Regulatory</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="jurisdictionFilter">Jurisdiction</label>
+                    <select id="jurisdictionFilter" class="case-filter">
+                        <option value="">All Jurisdictions</option>
+                        <option value="federal">Federal</option>
+                        <option value="state">State</option>
+                        <option value="local">Local</option>
+                        <option value="international">International</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="dateFromFilter">Date From</label>
+                    <input type="date" id="dateFromFilter" class="case-filter">
+                </div>
+                <div class="filter-group">
+                    <label for="dateToFilter">Date To</label>
+                    <input type="date" id="dateToFilter" class="case-filter">
+                </div>
+                <div class="filter-group">
+                    <label for="caseSearch">Search</label>
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="caseSearch" placeholder="Search cases..." class="case-filter">
+                    </div>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-outline" onclick="clearFilters()">
+                    <i data-lucide="x"></i>
+                    Clear Filters
+                </button>
+                <button class="btn btn-primary" onclick="exportCases()">
+                    <i data-lucide="download"></i>
+                    Export Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Case Statistics Summary -->
+        <div class="case-stats-summary" id="caseStatsSummary">
+            <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Case List -->
+        <div class="case-list-section">
+            <div class="section-header">
+                <h3>Cases</h3>
+                <div class="view-options">
+                    <button class="btn btn-outline btn-sm active" data-view="grid">
+                        <i data-lucide="grid-3x3"></i>
+                        Grid
+                    </button>
+                    <button class="btn btn-outline btn-sm" data-view="list">
+                        <i data-lucide="list"></i>
+                        List
+                    </button>
+                </div>
+            </div>
+            <div id="caseListContainer" class="case-list-container">
+                <!-- Cases populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="pagination-container">
+            <!-- Pagination populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Create Case Modal -->
+    <div id="createCaseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Case</h3>
+                <button class="modal-close" onclick="closeCreateCaseModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="createCaseForm">
+                    <div class="form-group">
+                        <label for="caseTitle">Case Title *</label>
+                        <input type="text" id="caseTitle" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="caseDescription">Description</label>
+                        <textarea id="caseDescription" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="casePriority">Priority Level</label>
+                        <select id="casePriority" class="form-control">
+                            <option value="1">Critical (1)</option>
+                            <option value="2">High (2)</option>
+                            <option value="3" selected>Medium (3)</option>
+                            <option value="4">Low (4)</option>
+                            <option value="5">Minimal (5)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="caseTypeCreate">Case Type</label>
+                        <select id="caseTypeCreate" class="form-control">
+                            <option value="criminal">Criminal</option>
+                            <option value="civil">Civil</option>
+                            <option value="administrative">Administrative</option>
+                            <option value="regulatory">Regulatory</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="caseJurisdiction">Jurisdiction</label>
+                        <select id="caseJurisdiction" class="form-control">
+                            <option value="federal">Federal</option>
+                            <option value="state">State</option>
+                            <option value="local">Local</option>
+                            <option value="international">International</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="estimatedCompletion">Estimated Completion</label>
+                        <input type="date" id="estimatedCompletion" class="form-control">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="plus"></i>
+                            Create Case
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="closeCreateCaseModal()">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div id="statisticsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Case Statistics</h3>
+                <button class="modal-close" onclick="closeStatisticsModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-timeframe">
+                    <label>Timeframe:</label>
+                    <select id="statsTimeframe" onchange="loadStatistics()">
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d" selected>Last 30 days</option>
+                        <option value="90d">Last 90 days</option>
+                        <option value="1y">Last year</option>
+                    </select>
+                </div>
+                <div id="statisticsContent">
+                    <!-- Statistics content populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading cases...</p>
+        </div>
+    </div>
+
+    <script src="case-status-manager.js"></script>
+    <script>
+        // Additional case management functionality
+        
+        function showCreateCaseModal() {
+            document.getElementById('createCaseModal').classList.add('active');
+        }
+        
+        function closeCreateCaseModal() {
+            document.getElementById('createCaseModal').classList.remove('active');
+            document.getElementById('createCaseForm').reset();
+        }
+        
+        function showStatisticsModal() {
+            document.getElementById('statisticsModal').classList.add('active');
+            loadStatistics();
+        }
+        
+        function closeStatisticsModal() {
+            document.getElementById('statisticsModal').classList.remove('active');
+        }
+        
+        async function createCase() {
+            const currentUser = caseStatusManager.getCurrentUser();
+            if (!currentUser) {
+                caseStatusManager.showError('Please log in to create cases');
+                return;
+            }
+            
+            const formData = {
+                title: document.getElementById('caseTitle').value,
+                description: document.getElementById('caseDescription').value,
+                priority_level: parseInt(document.getElementById('casePriority').value),
+                case_type: document.getElementById('caseTypeCreate').value,
+                jurisdiction: document.getElementById('caseJurisdiction').value,
+                estimated_completion: document.getElementById('estimatedCompletion').value,
+                created_by: currentUser.wallet_address
+            };
+            
+            try {
+                const response = await fetch('/api/cases', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    caseStatusManager.showSuccess('Case created successfully');
+                    closeCreateCaseModal();
+                    caseStatusManager.applyFilters();
+                } else {
+                    caseStatusManager.showError(data.error || 'Failed to create case');
+                }
+            } catch (error) {
+                console.error('Create case error:', error);
+                caseStatusManager.showError('Failed to create case');
+            }
+        }
+        
+        async function loadStatistics() {
+            const timeframe = document.getElementById('statsTimeframe').value;
+            const currentUser = caseStatusManager.getCurrentUser();
+            
+            try {
+                const response = await fetch(`/api/cases/statistics?timeframe=${timeframe}&userWallet=${currentUser?.wallet_address || ''}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderStatistics(data.statistics);
+                }
+            } catch (error) {
+                console.error('Load statistics error:', error);
+            }
+        }
+        
+        function renderStatistics(stats) {
+            const container = document.getElementById('statisticsContent');
+            
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-section">
+                        <h4>Cases by Status</h4>
+                        <div class="status-stats">
+                            ${stats.by_status.map(status => `
+                                <div class="stat-item">
+                                    <span class="stat-label" style="color: ${status.color_code}">
+                                        ${status.status_name}
+                                    </span>
+                                    <span class="stat-value">${status.count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="stat-section">
+                        <h4>Cases by Priority</h4>
+                        <div class="priority-stats">
+                            ${Object.entries(stats.by_priority).map(([priority, count]) => `
+                                <div class="stat-item">
+                                    <span class="stat-label">Priority ${priority}</span>
+                                    <span class="stat-value">${count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="stat-section">
+                        <h4>Recent Activity</h4>
+                        <div class="activity-list">
+                            ${stats.recent_activity.slice(0, 10).map(activity => `
+                                <div class="activity-item">
+                                    <div class="activity-case">
+                                        ${activity.cases.title} (${activity.cases.case_number})
+                                    </div>
+                                    <div class="activity-change">
+                                        Status changed to ${activity.to_status.status_name}
+                                    </div>
+                                    <div class="activity-time">
+                                        ${new Date(activity.created_at).toLocaleString()}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function clearFilters() {
+            document.querySelectorAll('.case-filter').forEach(filter => {
+                filter.value = '';
+            });
+            caseStatusManager.applyFilters();
+        }
+        
+        async function exportCases() {
+            const currentUser = caseStatusManager.getCurrentUser();
+            if (!currentUser) {
+                caseStatusManager.showError('Please log in to export cases');
+                return;
+            }
+            
+            try {
+                const params = new URLSearchParams(caseStatusManager.currentFilters);
+                params.append('export', 'true');
+                
+                const response = await fetch(`/api/cases/export?${params}`);
+                const blob = await response.blob();
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cases_export_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                caseStatusManager.showSuccess('Cases exported successfully');
+            } catch (error) {
+                console.error('Export cases error:', error);
+                caseStatusManager.showError('Failed to export cases');
+            }
+        }
+        
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Bind create case form
+            document.getElementById('createCaseForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                createCase();
+            });
+            
+            // Check authentication
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+        });
+    </script>
+</body>
+</html>
