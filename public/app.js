@@ -27,15 +27,16 @@ const roleMapping = {
     8: 'admin'
 };
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Initialize sections properly on page load
-    initializeSections();
-    initializeApp();
-    initializeLucideIcons();
-    initializeNavigation();
-    initializeRoleSelection();
-    initializeScrollUp();
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        lucide.createIcons();
+        initializeApp();
+        
+        // Add click handler directly
+        const connectBtn = document.getElementById('connectWallet');
+        if (connectBtn) {
+            connectBtn.onclick = connectWallet;
+        }
+    });
 
 function initializeSections() {
     // Hide all sections except wallet section on initial load
@@ -60,29 +61,10 @@ function initializeLucideIcons() {
     }
 }
 
-async function initializeApp() {
-    const connectBtn = document.getElementById('connectWallet');
-    const regForm = document.getElementById('registrationForm');
-    const dashBtn = document.getElementById('goToDashboard');
-
-    if (connectBtn) connectBtn.addEventListener('click', connectWallet);
-    if (regForm) regForm.addEventListener('submit', handleRegistration);
-    if (dashBtn) dashBtn.addEventListener('click', goToDashboard);
-
-    // Only auto-connect if user explicitly had a connection before
-    const wasConnected = localStorage.getItem('wasConnected');
-    if (window.ethereum && wasConnected === 'true') {
-        try {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-            if (accounts.length > 0) {
-                await connectWallet();
-            }
-        } catch (error) {
-            console.log('MetaMask not connected');
-            localStorage.removeItem('wasConnected');
+        async function initializeApp() {
+            // Simple initialization
+            lucide.createIcons();
         }
-    }
-}
 
 function initializeNavigation() {
     const menuToggle = document.getElementById('menuToggle');
@@ -449,60 +431,40 @@ async function connectWallet() {
         // Mark as connected for future auto-connection
         localStorage.setItem('wasConnected', 'true');
 
-        // Check if user already has a role selected
-        const selectedRole = localStorage.getItem('selectedRole');
-        const roleWizardCompleted = localStorage.getItem('roleWizardCompleted');
-        
-        if (roleWizardCompleted === 'true' && selectedRole) {
-            // Redirect to appropriate dashboard
-            const roleMapping = {
-                'public_viewer': 'dashboard-public.html',
-                'investigator': 'dashboard-investigator.html',
-                'forensic_analyst': 'dashboard-analyst.html',
-                'legal_professional': 'dashboard-legal.html',
-                'court_official': 'dashboard-court.html',
-                'evidence_manager': 'dashboard-manager.html',
-                'auditor': 'dashboard-auditor.html',
-                'admin': 'admin.html'
-            };
+        async function connectWallet() {
+            console.log('Connect wallet clicked');
             
-            const dashboardUrl = roleMapping[selectedRole] || 'dashboard.html';
-            showLoading(false);
-            hideConnectionLoader();
-            window.location.href = dashboardUrl;
-            return;
+            if (!window.ethereum) {
+                alert('Please install MetaMask!');
+                return;
+            }
+
+            try {
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
+                if (accounts && accounts.length > 0) {
+                    userAccount = accounts[0];
+                    localStorage.setItem('currentUser', userAccount);
+                    
+                    // Hide wallet section, show role wizard
+                    document.getElementById('walletSection').classList.add('hidden');
+                    
+                    if (typeof showRoleWizard === 'function') {
+                        showRoleWizard(userAccount);
+                    } else {
+                        // Fallback - go directly to role selection
+                        toggleSections('registration');
+                    }
+                } else {
+                    alert('No accounts found. Please unlock MetaMask.');
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                alert('Connection failed: ' + error.message);
+            }
         }
-
-        // Show role selection wizard for new users
-        if (typeof showRoleWizard === 'function') {
-            showRoleWizard(userAccount);
-            showLoading(false);
-            hideConnectionLoader();
-            return;
-        }
-
-        // Fallback to existing admin logic if wizard not available
-        const adminData = {
-            fullName: 'Administrator',
-            email: 'admin@evid-dgc.com',
-            role: 'admin',
-            department: 'Administration',
-            jurisdiction: 'System',
-            badgeNumber: 'ADMIN-001',
-            isRegistered: true,
-            registrationDate: new Date().toISOString(),
-            walletAddress: userAccount,
-            accountType: 'admin'
-        };
-
-        localStorage.setItem('evidUser_' + userAccount, JSON.stringify(adminData));
-        localStorage.setItem('currentUser', userAccount);
-
-        displayAdminOptions(adminData);
-        toggleSections('adminOptions');
-        showLoading(false);
-        hideConnectionLoader();
-        return;
 
     } catch (error) {
         showLoading(false);
@@ -758,10 +720,7 @@ function disconnectWallet() {
 }
 
 function showLoading(show) {
-    const modal = document.getElementById('loadingModal');
-    if (modal) {
-        modal.classList.toggle('active', show);
-    }
+    // Disabled - no loading modal
 }
 
 function showAlert(message, type = 'info') {

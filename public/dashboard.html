@@ -89,11 +89,8 @@
         </div>
     </div>
 
-    <script src="config.js?v=8"></script>
-    <script src="storage.js?v=8"></script>
-    <script src="role-manager.js"></script>
-    <script src="role-navigation.js"></script>
-    <script src="analytics.js"></script>
+    <script src="config.js"></script>
+    <script src="storage.js"></script>
     <script src="dashboard-fix.js"></script>
     <script>
         // Role mapping for dashboard routing
@@ -109,6 +106,14 @@
             'public_viewer': 'dashboard-public.html',
 
             // Number-based roles (for backward compatibility)
+            '1': 'dashboard-public.html',
+            '2': 'dashboard-investigator.html',
+            '3': 'dashboard-analyst.html',
+            '4': 'dashboard-legal.html',
+            '5': 'dashboard-court.html',
+            '6': 'dashboard-manager.html',
+            '7': 'dashboard-auditor.html',
+            '8': 'admin.html',
             1: 'dashboard-public.html',
             2: 'dashboard-investigator.html',
             3: 'dashboard-analyst.html',
@@ -128,6 +133,14 @@
             'evidence_manager': 'Evidence Manager',
             'auditor': 'Auditor',
             'public_viewer': 'Public Viewer',
+            '1': 'Public Viewer',
+            '2': 'Investigator',
+            '3': 'Forensic Analyst',
+            '4': 'Legal Professional',
+            '5': 'Court Official',
+            '6': 'Evidence Manager',
+            '7': 'Auditor',
+            '8': 'Administrator',
             1: 'Public Viewer',
             2: 'Investigator',
             3: 'Forensic Analyst',
@@ -158,28 +171,39 @@
                 updateProgress('Checking authentication...', 30);
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // Check if user has selected a role using role manager
-                if (typeof roleManager !== 'undefined' && !roleManager.isRoleSelected()) {
-                    throw new Error('No role selected. Please complete role selection.');
-                }
-
-                const selectedRole = localStorage.getItem('selectedRole');
+                // Get user account
                 const userAccount = localStorage.getItem('currentUser');
-                
-                console.log('Dashboard router - selectedRole:', selectedRole);
                 console.log('Dashboard router - userAccount:', userAccount);
 
-                if (!selectedRole) {
-                    throw new Error('No role selected. Please log in again.');
+                if (!userAccount) {
+                    throw new Error('Please log in first.');
                 }
 
                 updateProgress('Loading user profile...', 50);
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // Create user info from role selection
+                // Get user data and determine role
+                let userData = await getUserInfo(userAccount);
+                let finalRole = localStorage.getItem('selectedRole');
+                
+                // If no selected role, try to get from user data
+                if (!finalRole && userData && userData.role) {
+                    finalRole = userData.role;
+                    localStorage.setItem('selectedRole', finalRole);
+                }
+                
+                // If still no role, default to public_viewer
+                if (!finalRole) {
+                    finalRole = 'public_viewer';
+                    localStorage.setItem('selectedRole', finalRole);
+                }
+
+                console.log('Dashboard router - finalRole:', finalRole);
+
+                // Create user info
                 const userInfo = {
-                    role: selectedRole,
-                    fullName: 'User',
+                    role: finalRole,
+                    fullName: userData ? userData.fullName || userData.full_name || 'User' : 'User',
                     walletAddress: userAccount
                 };
 
@@ -191,17 +215,15 @@
                 updateProgress('Redirecting to dashboard...', 90);
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // Route to appropriate dashboard using role manager
-                const dashboardUrl = typeof roleManager !== 'undefined' 
-                    ? roleManager.getDashboardUrl(selectedRole)
-                    : getDashboardUrl(selectedRole);
+                // Route to appropriate dashboard
+                const dashboardUrl = getDashboardUrl(finalRole);
                     
-                console.log(`Redirecting ${selectedRole} to ${dashboardUrl}`);
+                console.log(`Redirecting ${finalRole} to ${dashboardUrl}`);
 
                 // Track dashboard access
                 if (typeof gtag === 'function') {
                     gtag('event', 'dashboard_access', {
-                        'user_role': ROLE_NAMES[selectedRole] || 'Unknown',
+                        'user_role': ROLE_NAMES[finalRole] || 'Unknown',
                         'dashboard_url': dashboardUrl
                     });
                 }
@@ -214,29 +236,21 @@
 
             } catch (error) {
                 console.error('Dashboard initialization error:', error);
-                showError(error.message);
+                showError(error.message || 'Failed to load dashboard. Please try again.');
             }
         }
 
         async function getUserInfo(userAccount) {
             let userInfo = null;
 
-            // Try database first (if available)
-            if (typeof storage !== 'undefined') {
+            // Get from localStorage only
+            const savedUser = localStorage.getItem('evidUser_' + userAccount);
+            if (savedUser) {
                 try {
-                    userInfo = await storage.getUser(userAccount);
-                    console.log('User info from database:', userInfo);
-                } catch (error) {
-                    console.log('Database not available, checking localStorage');
-                }
-            }
-
-            // Fallback to localStorage
-            if (!userInfo) {
-                const savedUser = localStorage.getItem('evidUser_' + userAccount);
-                if (savedUser) {
                     userInfo = JSON.parse(savedUser);
                     console.log('User info from localStorage:', userInfo);
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
                 }
             }
 

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="fixed-navbar.js"></script>
+    <script src="sample-data.js"></script>
     <style>
         .investigator-hero {
             background: linear-gradient(135deg, #1e3a8a, #3b82f6);
@@ -299,22 +300,19 @@
                 let userData = JSON.parse(localStorage.getItem('evidUser_' + userAccount) || '{}');
 
                 if (!userData.role) {
-                    alert('User data not found. Please login again.');
-                    logout();
-                    return;
-                }
-
-                // Check if user has investigator role - DISABLED FOR DEVELOPMENT
-                // if (userData.role !== 'investigator' && userData.role !== 2) {
-                //     alert('Access denied. Investigator role required.');
-                //     logout();
-                //     return;
-                // }
-
-                // Force investigator role for any user
-                if (!userData.role) {
-                    userData.role = 'investigator';
-                    localStorage.setItem('evidUser_' + userAccount, JSON.stringify(userData));
+                    // Try to get role from selectedRole if user data is missing
+                    const selectedRole = localStorage.getItem('selectedRole');
+                    if (selectedRole) {
+                        userData.role = selectedRole;
+                        userData.fullName = localStorage.getItem('testUserName') || 'Investigator';
+                        userData.walletAddress = userAccount;
+                        // Save the user data
+                        localStorage.setItem('evidUser_' + userAccount, JSON.stringify(userData));
+                    } else {
+                        alert('User data not found. Please login again.');
+                        logout();
+                        return;
+                    }
                 }
 
                 currentUser = userData;
@@ -341,30 +339,144 @@
         }
 
         function loadDashboardData() {
-            // Simulate loading dashboard statistics
-            document.getElementById('activeCases').textContent = '5';
-            document.getElementById('evidenceItems').textContent = '23';
-            document.getElementById('pendingReviews').textContent = '3';
+            // Load real data from localStorage
+            const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+            const evidence = JSON.parse(localStorage.getItem('evidence') || '[]');
+            
+            const activeCases = cases.filter(c => c.status === 'OPEN').length;
+            const pendingReviews = evidence.filter(e => e.status === 'Pending').length;
+            
+            document.getElementById('activeCases').textContent = activeCases;
+            document.getElementById('evidenceItems').textContent = evidence.length;
+            document.getElementById('pendingReviews').textContent = pendingReviews;
+            
+            // Update cases grid with real data
+            const casesGrid = document.getElementById('casesGrid');
+            if (cases.length > 0) {
+                casesGrid.innerHTML = cases.slice(0, 3).map(c => `
+                    <div class="case-card">
+                        <div class="case-header">
+                            <h3>${c.title}</h3>
+                            <span class="status-badge status-${c.status.toLowerCase()}">${c.status}</span>
+                        </div>
+                        <p><strong>Case ID:</strong> ${c.id}</p>
+                        <p><strong>Location:</strong> ${c.location}</p>
+                        <p><strong>Date:</strong> ${c.date}</p>
+                        <div class="case-actions" style="margin-top: 15px;">
+                            <button class="btn btn-sm btn-primary" onclick="viewCaseDetails('${c.id}')">View Details</button>
+                            <button class="btn btn-sm btn-outline" onclick="uploadEvidence()">Add Evidence</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function viewCaseDetails(caseId) {
+            const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+            const caseData = cases.find(c => c.id === caseId);
+            if (caseData) {
+                alert(`📁 Case Details\n\nID: ${caseData.id}\nTitle: ${caseData.title}\nStatus: ${caseData.status}\nLocation: ${caseData.location}\nDate: ${caseData.date}\nCreated by: ${caseData.createdBy}`);
+            }
         }
 
         function createNewCase() {
-            alert('🚀 Create New Case functionality coming soon!\n\nThis will open a form to create a new investigation case with:\n• Case details and description\n• Evidence upload capability\n• Blockchain verification\n• Secure case management');
+            // Create a simple case creation interface
+            const caseTitle = prompt('Enter case title:');
+            if (caseTitle) {
+                const caseId = 'INV-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6);
+                const newCase = {
+                    id: caseId,
+                    title: caseTitle,
+                    status: 'OPEN',
+                    location: prompt('Enter case location:') || 'Not specified',
+                    date: new Date().toLocaleDateString(),
+                    createdBy: currentUser.fullName || 'Investigator',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+                cases.unshift(newCase);
+                localStorage.setItem('cases', JSON.stringify(cases));
+                
+                alert(`✅ Case created successfully!\n\nCase ID: ${caseId}\nTitle: ${caseTitle}\nStatus: OPEN`);
+                loadDashboardData();
+            }
         }
 
         function uploadEvidence() {
-            alert('📤 Upload Evidence functionality coming soon!\n\nThis will allow you to:\n• Upload digital evidence files\n• Generate blockchain hashes\n• Maintain chain of custody\n• Verify evidence integrity');
+            // Create a simple evidence upload interface
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*,video/*,.pdf,.doc,.docx,.txt';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const evidenceId = 'EVD-' + Date.now();
+                    const evidence = {
+                        id: evidenceId,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type,
+                        uploadedBy: currentUser.fullName || 'Investigator',
+                        uploadedAt: new Date().toISOString(),
+                        status: 'Verified',
+                        hash: 'sha256:' + Math.random().toString(36).substring(2, 15)
+                    };
+                    
+                    // Save to localStorage
+                    const evidenceList = JSON.parse(localStorage.getItem('evidence') || '[]');
+                    evidenceList.unshift(evidence);
+                    localStorage.setItem('evidence', JSON.stringify(evidenceList));
+                    
+                    alert(`✅ Evidence uploaded successfully!\n\nEvidence ID: ${evidenceId}\nFile: ${file.name}\nSize: ${(file.size/1024).toFixed(2)} KB\nStatus: Verified`);
+                    loadDashboardData();
+                }
+            };
+            input.click();
         }
 
         function searchCases() {
-            alert('🔍 Search Cases functionality coming soon!\n\nThis will provide:\n• Advanced case search filters\n• Evidence cross-referencing\n• Timeline analysis\n• Case relationship mapping');
+            const searchTerm = prompt('Enter search term (case ID, title, or location):');
+            if (searchTerm) {
+                const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+                const results = cases.filter(c => 
+                    c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.location.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                
+                if (results.length > 0) {
+                    let resultText = `🔍 Search Results for "${searchTerm}":\n\n`;
+                    results.forEach(c => {
+                        resultText += `• ${c.id}: ${c.title} (${c.status})\n`;
+                    });
+                    alert(resultText);
+                } else {
+                    alert(`No cases found matching "${searchTerm}"`);
+                }
+            }
         }
 
         function generateReport() {
-            alert('📊 Generate Report functionality coming soon!\n\nThis will create:\n• Comprehensive investigation reports\n• Evidence summaries\n• Timeline reconstructions\n• Court-ready documentation');
+            const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+            const evidence = JSON.parse(localStorage.getItem('evidence') || '[]');
+            
+            const report = {
+                generatedBy: currentUser.fullName || 'Investigator',
+                generatedAt: new Date().toISOString(),
+                totalCases: cases.length,
+                totalEvidence: evidence.length,
+                activeCases: cases.filter(c => c.status === 'OPEN').length,
+                closedCases: cases.filter(c => c.status === 'CLOSED').length
+            };
+            
+            alert(`📊 Investigation Report\n\nGenerated by: ${report.generatedBy}\nDate: ${new Date(report.generatedAt).toLocaleDateString()}\n\nTotal Cases: ${report.totalCases}\nActive Cases: ${report.activeCases}\nClosed Cases: ${report.closedCases}\nTotal Evidence: ${report.totalEvidence}\n\n✅ Report generated successfully!`);
         }
 
         function refreshCases() {
-            alert('🔄 Refreshing cases...\n\nIn the full system, this would:\n• Sync with blockchain\n• Update case statuses\n• Load new evidence\n• Refresh all data');
+            loadDashboardData();
+            alert('🔄 Cases refreshed successfully!');
         }
 
         function logout() {

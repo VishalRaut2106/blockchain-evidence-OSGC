@@ -196,7 +196,7 @@ class RoleSelectionWizard {
         }
     }
 
-    async function proceed() {
+    proceed() {
         if (!this.selectedRole) {
             this.showError('Please select a role first.');
             return;
@@ -226,7 +226,7 @@ class RoleSelectionWizard {
             }
             
             // Log role selection
-            await this.logRoleSelection();
+            this.logRoleSelection();
             
             // Show success message
             this.showSuccess(role);
@@ -242,22 +242,20 @@ class RoleSelectionWizard {
         }
     }
 
-    async logRoleSelection() {
+    logRoleSelection() {
         try {
-            await fetch('/api/activity-logs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+            // Simple logging to localStorage for now
+            const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
+            logs.unshift({
+                user_id: this.userWallet,
+                action: 'role_selected',
+                details: {
+                    selected_role: this.selectedRole,
+                    timestamp: new Date().toISOString()
                 },
-                body: JSON.stringify({
-                    user_id: this.userWallet,
-                    action: 'role_selected',
-                    details: JSON.stringify({
-                        selected_role: this.selectedRole,
-                        timestamp: new Date().toISOString()
-                    })
-                })
+                timestamp: new Date().toISOString()
             });
+            localStorage.setItem('activityLogs', JSON.stringify(logs.slice(0, 100))); // Keep last 100 logs
         } catch (error) {
             console.error('Failed to log role selection:', error);
         }

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="fixed-navbar.js"></script>
+    <script src="sample-data.js"></script>
     <style>
         .public-hero {
             background: linear-gradient(135deg, #059669, #10b981);
@@ -269,12 +270,20 @@
                 let userData = JSON.parse(localStorage.getItem('evidUser_' + userAccount) || '{}');
 
                 if (!userData.role) {
-                    alert('User data not found. Please login again.');
-                    logout();
-                    return;
+                    // Try to get role from selectedRole if user data is missing
+                    const selectedRole = localStorage.getItem('selectedRole');
+                    if (selectedRole) {
+                        userData.role = selectedRole;
+                        userData.fullName = localStorage.getItem('testUserName') || 'Public Viewer';
+                        userData.walletAddress = userAccount;
+                        // Save the user data
+                        localStorage.setItem('evidUser_' + userAccount, JSON.stringify(userData));
+                    } else {
+                        alert('User data not found. Please login again.');
+                        logout();
+                        return;
+                    }
                 }
-
-                // Role check disabled for development
 
                 currentUser = userData;
                 updateUserInterface();
@@ -300,16 +309,39 @@
         }
 
         function loadDashboardData() {
-            // Simulate loading dashboard statistics
-            document.getElementById('publicCases').textContent = '12';
-            document.getElementById('closedCases').textContent = '8';
-            document.getElementById('publicEvidence').textContent = '45';
+            // Load public cases from localStorage
+            const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+            const evidence = JSON.parse(localStorage.getItem('evidence') || '[]');
+            
+            // Filter for public/closed cases only
+            const publicCases = cases.filter(c => c.status === 'CLOSED' || c.isPublic);
+            const publicEvidence = evidence.filter(e => e.isPublic || e.status === 'Verified');
+            
+            document.getElementById('publicCases').textContent = publicCases.length;
+            document.getElementById('closedCases').textContent = cases.filter(c => c.status === 'CLOSED').length;
+            document.getElementById('publicEvidence').textContent = publicEvidence.length;
         }
 
         function searchCases() {
             const searchTerm = document.getElementById('searchInput').value;
             if (searchTerm.trim()) {
-                alert(`🔍 Searching for: "${searchTerm}"\n\nIn the full system, this would:\n• Search public case records\n• Filter by keywords\n• Show matching results\n• Provide detailed case summaries`);
+                const cases = JSON.parse(localStorage.getItem('cases') || '[]');
+                const publicCases = cases.filter(c => c.status === 'CLOSED' || c.isPublic);
+                const results = publicCases.filter(c => 
+                    c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.location.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                
+                if (results.length > 0) {
+                    let resultText = `🔍 Public Search Results for "${searchTerm}":\n\n`;
+                    results.forEach(c => {
+                        resultText += `• ${c.id}: ${c.title} (${c.status})\n  Location: ${c.location}\n  Date: ${c.date}\n\n`;
+                    });
+                    alert(resultText);
+                } else {
+                    alert(`No public cases found matching "${searchTerm}"`);
+                }
             } else {
                 alert('Please enter a search term');
             }
