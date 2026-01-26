@@ -120,15 +120,24 @@ const notifyMultipleUsers = async (userWallets, title, message, type, data = {})
     }
 };
 
-// Middleware
+// ============================================================================
+// MIDDLEWARE CONFIGURATION - ORDER IS CRITICAL!
+// ============================================================================
+
+// 1. CORS MUST BE FIRST
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? (process.env.ALLOWED_ORIGINS?.split(',') || ['https://blockchain-evidence.onrender.com']).map(url => url.trim())
         : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true
 }));
+
+// 2. JSON/BODY PARSER
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// 3. STATIC FILES - BEFORE API ROUTES
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure multer for file uploads
 const upload = multer({
@@ -201,6 +210,21 @@ const validateWalletAddress = (address) => {
 };
 
 const allowedRoles = ['public_viewer', 'investigator', 'forensic_analyst', 'legal_professional', 'court_official', 'evidence_manager', 'auditor', 'admin'];
+
+// ============================================================================
+// CRITICAL: Health Check BEFORE Static Files (but after middleware)
+// ============================================================================
+app.get('/api/health', (req, res) => {
+    console.log('🏥 Health check endpoint called');
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        port: PORT
+    });
+});
 
 // Evidence export helper functions
 const generateWatermarkText = (userWallet, caseNumber, timestamp) => {
@@ -359,11 +383,6 @@ app.get('/data-protection', policyPageLimiter, (req, res) => {
 // Public demo case route
 app.get('/demo-case', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'demo-case.html'));
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // Notification API endpoints
